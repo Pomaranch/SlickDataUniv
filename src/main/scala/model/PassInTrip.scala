@@ -7,7 +7,9 @@ import slick.lifted.Tag
 import slick.jdbc.PostgresProfile.api._
 import java.time.{LocalDate, LocalDateTime}
 
-case class PassInTrip(id_trip : Option[Long], date : Timestamp, id_pass : Long, place : String)
+import scala.concurrent.Future
+
+case class PassInTrip(id_trip : Option[Long], date : Option[Timestamp], id_pass : Long, place : String)
 
 class PassInTripTable(tag:Tag) extends Table[PassInTrip](tag,"pass_in_trip"){
 
@@ -21,9 +23,15 @@ class PassInTripTable(tag:Tag) extends Table[PassInTrip](tag,"pass_in_trip"){
   val passFk = foreignKey("id_pass_fk", id_pass, TableQuery[PassengerTable])(_.id)
   val passInTripPk = primaryKey("pit_pk", (id_trip, id_pass, date))
 
-  def * = (id_trip.?, date, id_pass, place) <> (PassInTrip.apply _ tupled, PassInTrip.unapply)
+  def * = (id_trip.?, date.?, id_pass, place) <> (PassInTrip.apply _ tupled, PassInTrip.unapply)
 }
 
 object PassInTripTable{
   val table = TableQuery[PassInTripTable]
+}
+
+class PassInTripRepository(database: Database){
+  def create(passInTrip: PassInTrip): Future[PassInTrip] ={
+    database.run(PassInTripTable.table returning PassInTripTable.table += passInTrip)
+  }
 }
