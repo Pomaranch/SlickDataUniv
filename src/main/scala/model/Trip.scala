@@ -1,25 +1,15 @@
 package model
 
-import java.sql.{Date, Timestamp}
+import java.sql.Timestamp
 
-import slick.lifted.Tag
 import slick.jdbc.PostgresProfile.api._
-import java.time.{LocalDate, LocalDateTime}
-
-import slick.ast.BaseTypedType
-import slick.jdbc.JdbcType
+import slick.lifted.Tag
 
 import scala.concurrent.Future
 
-case class Trip(id:Option[Long], id_comp : Long, plane : String, town_to: String, town_from : String, time_out : Timestamp, time_in : Timestamp)
+case class Trip(id: Option[Long], id_comp: Long, plane: String, town_to: String, town_from: String, time_out: Timestamp, time_in: Timestamp)
 
-class TripTable(tag : Tag) extends Table[Trip](tag, "trip"){
-
-//  implicit def dateTime  =
-//    MappedColumnType.base[LocalDateTime, Date](
-//      dateTime => new Date(dateTime.getSecond),
-//      date => new LocalDateTime(date)
-//    )
+class TripTable(tag: Tag) extends Table[Trip](tag, "trip") {
 
   val id = column[Long]("id", O.PrimaryKey)
   val id_comp = column[Long]("id_comp")
@@ -35,17 +25,13 @@ class TripTable(tag : Tag) extends Table[Trip](tag, "trip"){
 
 }
 
-object TripTable{
+object TripTable {
   val table = TableQuery[TripTable]
 }
 
-class TripRepository(database: Database){
-  def create(trip: Trip): Future[Trip] ={
-//    val query =
-//
-//      (TripTable.table returning TripTable.table += trip).flatMap{
-//        insertedTrip => (PassInTripTable.table ++= passengerIds.map(passengerId => PassInTrip())).andThen(DBIO.successful(insertedTrip))
-//      }
+class TripRepository(database: Database) {
+  def create(trip: Trip): Future[Trip] = {
     database.run(TripTable.table returning TripTable.table += trip)
   }
+
 }

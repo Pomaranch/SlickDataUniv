@@ -15,11 +15,11 @@ object Main {
   val passengerRepository = new PassengerRepository(database)
   val tripRepository = new TripRepository(database)
   val passInTripRepository = new PassInTripRepository(database)
+  val queryRepository = new QueryRepository(database)
 
 
   def main(args: Array[String]): Unit = {
-    init()
-    fill()
+    queryRepository.task68()
   }
 
   def init(): Unit ={
