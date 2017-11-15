@@ -132,6 +132,8 @@ class QueryRepository(database: Database) {
     print(group)
   }
 
+  //
+
   def task87(): Unit = {
 
     val travelledFromMoscow = Await.result(database.run(
@@ -181,17 +183,64 @@ class QueryRepository(database: Database) {
 
     val moreThanOnce = Await.result(database.run(TripTable.table
       .join(PassInTripTable.table).on(_.id === _.id_trip)
-        .filter { case (trip, passenger) => trip.town_to === "Moscow" }
-        .groupBy { case (trip, passenger) => passenger.id_pass }
-        .map { case (id, group) => (id, group.length) }
-        .filter { case (id, amount) => amount > 1 }
+      .filter { case (trip, passenger) => trip.town_to === "Moscow" }
+      .groupBy { case (trip, passenger) => passenger.id_pass }
+      .map { case (id, group) => (id, group.length) }
+      .filter { case (id, amount) => amount > 1 }
       .result),
       Duration.Inf)
 
     moreThanOnce
       .foreach { passenger => {
-        print(visitors.get(passenger._1).get, passenger._2)
-      }}
+        print(visitors(passenger._1), passenger._2)
+      }
+      }
+  }
+
+  //
+
+  def task122(): Unit = {
+    val passengers = Await.result(database.run(
+      PassInTripTable.table
+        .join(PassengerTable.table).on(_.id_pass === _.id)
+        .map { case (id, info) => id.id_pass -> info.name }
+        .result),
+      Duration.Inf)
+      .distinct
+
+    val firstTown = collection.mutable.Map[Long, String]()
+    val lastTown = collection.mutable.Map[Long, String]()
+
+    passengers.foreach { case (id, name) =>
+      val firstTownFromQuery = Await.result(database.run(
+        TripTable.table
+          .join(PassInTripTable.table).on(_.id === _.id_trip)
+          .sortBy { case (trip, passenger) => (passenger.date, trip.time_out) }
+          .filter { case (trip, passenger) => passenger.id_pass === id }
+          .map { case (trip, passenger) => trip.town_from }
+          .result
+          .headOption),
+        Duration.Inf)
+
+      val lastTownToQuery = Await.result(database.run(
+        TripTable.table
+          .join(PassInTripTable.table).on(_.id === _.id_trip)
+          .sortBy { case (trip, passenger) => (passenger.date.desc, trip.time_out.desc) }
+          .filter { case (trip, passenger) => passenger.id_pass === id }
+          .map { case (trip, passenger) => trip.town_to }
+          .result
+          .headOption),
+        Duration.Inf)
+
+      firstTown += (id -> firstTownFromQuery.get)
+      lastTown += (id -> lastTownToQuery.get)
+    }
+
+    passengers
+      .filter { case (id, name) => firstTown(id) != lastTown(id) }
+      .foreach { case (id, name) =>
+        println(name + " " + firstTown(id))
+      }
   }
 
 }
