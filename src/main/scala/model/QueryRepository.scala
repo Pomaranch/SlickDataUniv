@@ -80,8 +80,9 @@ class QueryRepository(database: Database) {
     val maxAmount = result.maxBy(x => x._2)._2
 
     print(result.filter(x => x._2 == maxAmount))
-
   }
+
+
 
 
   def task77(): Unit = {
@@ -89,5 +90,21 @@ class QueryRepository(database: Database) {
       .filter(x => x.town_from === "Rostov")
       .groupBy(x => x.time_out)
   }
+
+  def task114(): Unit ={
+    val query = PassengerTable.table
+      .join(PassInTripTable.table)
+      .on(_.id === _.id_pass)
+      .groupBy { case (passenger, trip) => (trip.place, passenger.name) }
+      .map { case (passenger, group) => (passenger._2, group.length) }
+      .filter { x => x._2 > 1 }
+
+    val result = Await.result(database.run(query.result), Duration.Inf)
+    val maxAmount = result.maxBy((x) =>x._2)._2
+
+    print(result.filter(x => x._2 == maxAmount))
+
+  }
+  
 
 }
