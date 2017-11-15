@@ -105,7 +105,7 @@ class QueryRepository(database: Database) {
   }
 
   def task102(): Unit = {
-    
+
     val query = TripTable.table
       .join(PassInTripTable.table).on(_.id === _.id_trip)
       .join(PassengerTable.table).on(_._2.id_pass === _.id)
