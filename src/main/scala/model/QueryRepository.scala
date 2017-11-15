@@ -2,6 +2,7 @@ package model
 
 import slick.jdbc.PostgresProfile.api._
 
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -128,15 +129,69 @@ class QueryRepository(database: Database) {
       .filter { case (id, sources) => sources.size == 1 }
       .keys
 
-
     print(group)
   }
 
-  def task103(): Unit = {
-    //val query = TripTable.table
-    //.map(trips => trips.mapTo(trips.id).max)
+  def task87(): Unit = {
 
+    val travelledFromMoscow = Await.result(database.run(
+      TripTable.table
+        .join(PassInTripTable.table).on(_.id === _.id_trip)
+        .join(PassengerTable.table).on(_._2.id_pass === _.id)
+        .map { case (tripInfo, pass) => (tripInfo._1.town_from, pass.id) }
+        .filter { case (townFrom, id) => townFrom === "Moscow" }
+        .map { case (townFrom, id) => id }
+        .result),
+      Duration.Inf)
+
+    var livedInMoscowBuffer = new ListBuffer[Long]()
+
+    travelledFromMoscow.distinct.foreach { id => {
+      var query = Await.result(database.run(
+        TripTable.table
+          .join(PassInTripTable.table).on(_.id === _.id_trip)
+          .filter { case (trip, passenger) => passenger.id_pass === id }
+          .map { case (trip, passenger) => trip.town_from }
+          .result
+          .headOption),
+        Duration.Inf)
+
+      val firstTownFrom = query.get
+
+      if (firstTownFrom == "Moscow") {
+        livedInMoscowBuffer += id
+      }
+    }
+    }
+
+    val livedInMoscow = livedInMoscowBuffer.toList
+
+    val travelledInMoscow = Await.result(database.run(TripTable.table
+      .join(PassInTripTable.table).on(_.id === _.id_trip)
+      .join(PassengerTable.table).on(_._2.id_pass === _.id)
+      .map { case (tripInfo, pass) => (tripInfo._1.town_to, pass.id, pass.name) }
+      .filter { case (townTo, id, name) => townTo === "Moscow" }
+      .map { case (townTo, id, name) => (id, name) }
+      .result),
+      Duration.Inf)
+
+    val visitors = travelledInMoscow
+      .filterNot(passenger => livedInMoscow.contains(passenger._1))
+      .toMap
+
+    val moreThanOnce = Await.result(database.run(TripTable.table
+      .join(PassInTripTable.table).on(_.id === _.id_trip)
+        .filter { case (trip, passenger) => trip.town_to === "Moscow" }
+        .groupBy { case (trip, passenger) => passenger.id_pass }
+        .map { case (id, group) => (id, group.length) }
+        .filter { case (id, amount) => amount > 1 }
+      .result),
+      Duration.Inf)
+
+    moreThanOnce
+      .foreach { passenger => {
+        print(visitors.get(passenger._1).get, passenger._2)
+      }}
   }
-
 
 }
