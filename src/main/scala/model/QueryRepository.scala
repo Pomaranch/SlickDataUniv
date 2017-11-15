@@ -105,21 +105,36 @@ class QueryRepository(database: Database) {
   }
 
   def task102(): Unit = {
-
-    //TODO : FIX FROM<->TO, ADD
+    
     val query = TripTable.table
       .join(PassInTripTable.table).on(_.id === _.id_trip)
-      .map { case (trip, pass) => if (trip.town_from.toString().length > trip.town_to.toString().length) (trip.town_to, trip.town_from, pass.id_pass) else (trip.town_from, trip.town_to, pass.id_pass) }
-      .groupBy { case (town_to, town_from, pass) => (town_to, town_from, pass) }
-      .map { case (info, group) => (info._1, info._2, info._3, group.length) }
+      .join(PassengerTable.table).on(_._2.id_pass === _.id)
+      .map { case (trip, pass) => (trip._1.town_to, trip._1.town_from, pass.name) }
+      .result
 
-    val result = Await.result(database.run(query.result), Duration.Inf)
-    print(result)
+    var result = Await.result(database.run(query), Duration.Inf)
+
+    result = result
+      .map { case (town_to, town_from, id) =>
+        if (town_to.compareTo(town_from) > 0)
+          (town_to, town_from, id)
+        else
+          (town_from, town_to, id)
+      }
+
+    val group = result
+      .groupBy { case (town_to, town_from, id) => id }
+      .map { case (id, trips) => (id, trips.map(_._1).toSet) }
+      .filter { case (id, sources) => sources.size == 1 }
+      .keys
+
+
+    print(group)
   }
 
   def task103(): Unit = {
     //val query = TripTable.table
-      //.map(trips => trips.mapTo(trips.id).max)
+    //.map(trips => trips.mapTo(trips.id).max)
 
   }
 

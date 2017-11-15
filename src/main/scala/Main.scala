@@ -9,7 +9,7 @@ import scala.concurrent.duration.Duration
 
 
 object Main {
-  val database : Database = Database.forURL("jdbc:postgresql://127.0.0.1/slick?user=Pomaranch&password=111")
+  val database : Database = Database.forURL("jdbc:postgresql://127.0.0.1/slick?user=pomaranch&password=111")
 
   val companyRepository = new CompanyRepository(database)
   val passengerRepository = new PassengerRepository(database)
