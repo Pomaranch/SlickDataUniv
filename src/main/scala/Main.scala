@@ -19,7 +19,7 @@ object Main {
 
 
   def main(args: Array[String]): Unit = {
-    queryRepository.task68()
+    queryRepository.task102()
   }
 
   def init(): Unit ={

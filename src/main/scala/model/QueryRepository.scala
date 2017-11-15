@@ -71,7 +71,7 @@ class QueryRepository(database: Database) {
       .join(CompanyTable.table).on(_._1._1.id_comp === _.id)
       .groupBy { case (trip, company) => trip._2.name -> company.name }
       .map { case (name, compGroup) => (name._1, name._2, compGroup.length) }
-      .groupBy { case (name, companyName, length) => (name,length,companyName) }
+      .groupBy { case (name, companyName, length) => (name, length, companyName) }
       .map { case (name, numberOfTrips) => (name._1, numberOfTrips.length, name._2, name._3) }
       .filter(x => x._2 === 1)
       .map { case (name, company, flights, companyName) => (name, flights, companyName) }
@@ -83,15 +83,13 @@ class QueryRepository(database: Database) {
   }
 
 
-
-
   def task77(): Unit = {
     val query = TripTable.table
       .filter(x => x.town_from === "Rostov")
       .groupBy(x => x.time_out)
   }
 
-  def task114(): Unit ={
+  def task114(): Unit = {
     val query = PassengerTable.table
       .join(PassInTripTable.table)
       .on(_.id === _.id_pass)
@@ -100,11 +98,30 @@ class QueryRepository(database: Database) {
       .filter { x => x._2 > 1 }
 
     val result = Await.result(database.run(query.result), Duration.Inf)
-    val maxAmount = result.maxBy((x) =>x._2)._2
+    val maxAmount = result.maxBy((x) => x._2)._2
 
     print(result.filter(x => x._2 == maxAmount))
 
   }
-  
+
+  def task102(): Unit = {
+
+    //TODO : FIX FROM<->TO, ADD
+    val query = TripTable.table
+      .join(PassInTripTable.table).on(_.id === _.id_trip)
+      .map { case (trip, pass) => if (trip.town_from.toString().length > trip.town_to.toString().length) (trip.town_to, trip.town_from, pass.id_pass) else (trip.town_from, trip.town_to, pass.id_pass) }
+      .groupBy { case (town_to, town_from, pass) => (town_to, town_from, pass) }
+      .map { case (info, group) => (info._1, info._2, info._3, group.length) }
+
+    val result = Await.result(database.run(query.result), Duration.Inf)
+    print(result)
+  }
+
+  def task103(): Unit = {
+    //val query = TripTable.table
+      //.map(trips => trips.mapTo(trips.id).max)
+
+  }
+
 
 }
