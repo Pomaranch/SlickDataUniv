@@ -87,9 +87,16 @@ class QueryRepository(database: Database) {
 
 
   def task77(): Unit = {
-    val query = TripTable.table
-      .filter(x => x.town_from === "Rostov")
-      .groupBy(x => x.time_out)
+    val query = PassInTripTable.table
+      .join(TripTable.table).on(_.id_trip === _.id)
+      .filter{ case(pass, trip) => trip.town_from === "Rostov"}
+      .groupBy{ case (pass, trip) => (pass.id_trip, pass.date)}
+      .map{ case (name, group) => (name._2,group.countDistinct)}
+      .sortBy(_._1.desc)
+      .result
+      .headOption
+
+    print(Await.result(database.run(query), Duration.Inf))
   }
 
   def task114(): Unit = {
