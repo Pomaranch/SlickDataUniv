@@ -243,4 +243,22 @@ class QueryRepository(database: Database) {
       }
   }
 
+  //
+
+  def task124(): Unit = {
+    val query = Await.result(database.run(
+      PassengerTable.table
+        .join(PassInTripTable.table).on(_.id === _.id_pass)
+        .join(TripTable.table).on(_._2.id_trip === _.id)
+        .groupBy { case (passenger, trip) => (passenger._1.id, passenger._1.name, trip.id_comp) }
+        .map { case (pass, group) => (pass._1, pass._2, group.length) }
+        .result
+    ),
+      Duration.Inf)
+
+    print(query.groupBy { case (id, name, amount) => (id,name) }
+      .filter { case (id, group) => group.length > 1 && group.distinct.length == 1 }
+      .map{ case(id,group) => id._2 })
+  }
+
 }
