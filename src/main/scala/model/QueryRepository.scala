@@ -1,5 +1,7 @@
 package model
 
+import java.text.SimpleDateFormat
+
 import slick.jdbc.PostgresProfile.api._
 
 import scala.collection.mutable.ListBuffer
@@ -256,9 +258,58 @@ class QueryRepository(database: Database) {
     ),
       Duration.Inf)
 
-    print(query.groupBy { case (id, name, amount) => (id,name) }
+    print(query.groupBy { case (id, name, amount) => (id, name) }
       .filter { case (id, group) => group.length > 1 && group.distinct.length == 1 }
-      .map{ case(id,group) => id._2 })
+      .map { case (id, group) => id._2 })
+  }
+
+  def task66(): Unit = {
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
+
+    val query = TripTable.table
+      .join(PassInTripTable.table).on(_.id === _.id_trip)
+      .join(PassengerTable.table).on(_._2.id_pass === _.id)
+      .groupBy {
+        joinedTables => (joinedTables._2.name, joinedTables._1._1.town_from, joinedTables._1._2.date)
+      }.map {
+      groupedByName => (groupedByName._1._1, groupedByName._1._2, groupedByName._1._3)
+    }
+
+    val result = Await.result(database.run(query.result), Duration.Inf)
+
+    result.filter { x =>
+      x._2 == "Rostov" &&
+        x._3.getTime >= dateFormat.parse("2003-04-01").getTime &&
+        x._3.getTime <= dateFormat.parse("2003-04-07").getTime
+    }.foreach(println)
+  }
+
+  def task131(): Unit = {
+    val letters = List('a', 'e', 'i', 'o', 'u')
+    val query = Await.result(database.run(
+      TripTable.table
+        .map(x => (x.town_to, x.town_from))
+        .result), Duration.Inf)
+      .toMap
+
+    val cities = (query.keys ++ query.values).toSet
+
+    cities.foreach(item => {
+      val occurences = collection.mutable.Map[Long, Int]()
+      letters.foreach(char => {
+        occurences(char) = item.count(_ == char)
+      })
+
+      val groups = occurences
+        .groupBy { case (key, amount) => amount }
+        .filter { case (amount, group) => amount > 0}
+
+      if (groups.size == 1 && groups.head._2.size > 1) {
+        println(item)
+      }
+    })
+
+
   }
 
 }
